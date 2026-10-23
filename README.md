@@ -3,6 +3,8 @@
 **Node-based Interface for Code Administration**  
 AI가 생성한 코드를 함수 단위의 노드 그래프로 역공학해 시각화하는 도구입니다.
 
+[한국어](#nica-flow) · [English](#nica-flow-english)
+
 > **Research in Progress**: 실험 단계의 프로젝트입니다. Issue, PR, 피드백 모두 환영합니다.
 
 ## 왜 만들었나
@@ -112,5 +114,124 @@ NICA Flow는 진행 중인 연구 프로젝트입니다. 학술 목적으로 이
 ```
 
 ## 라이선스
+
+[MIT License](./LICENSE) © 2026 Seowon Park (박서원)
+
+---
+
+# NICA Flow (English)
+
+**Node-based Interface for Code Administration**  
+A tool that reverse-engineers and visualizes AI-generated code as a function-level node graph.
+
+> **Research in Progress**: This is an experimental research project. Issues, PRs, and feedback are all welcome.
+
+## Why NICA Flow?
+
+Writing code with AI is fast, but maintaining the codebase becomes increasingly difficult as it grows:
+
+- **Black-box code**: Code works, but segments accumulate where no one fully understands why or how they work.
+- **Code bloat**: Instead of refactoring existing logic, similar functions get duplicated side by side.
+- **Unpredictable side effects**: It becomes hard to tell how far a single-line change will ripple across the codebase.
+
+**NICA Flow** decomposes code into **function-level nodes** with explicit inputs, outputs, side effects, and constraints—helping you grasp and administer the overall structure and execution flow at a glance.
+
+## How It Works
+
+Instead of requiring language-specific AST parsers or complex setup, NICA Flow uses the LLM you already work with.
+
+```
+Your Code ──▶ [LLM + nica-prompt.md] ──▶ nica JSON ──▶ [Viewer] ──▶ Node Graph
+```
+
+1. **Extract**: Copy [`nica-prompt.md`](./nica-prompt.md) and paste it into your LLM (Claude, ChatGPT, Gemini, etc.) along with your source code to produce a `nica JSON (v0.1)` output.
+2. **Visualize**: Paste the resulting JSON into the web viewer to render function calls, data flow, and exception propagation as an interactive node graph.
+
+You can also write or edit the JSON manually without an LLM by following [`schema-guide.md`](./schema-guide.md).
+
+## Quick Start
+
+### 1. Prepare `nica JSON`
+
+#### Option A: Extract with an LLM (fast, requires verification)
+
+1. Copy the full contents of [`nica-prompt.md`](./nica-prompt.md) into your LLM.
+2. Paste your target source code at the bottom under `[분석 대상 코드]`.
+3. Copy the generated JSON block.
+
+> **Note**: LLM extraction may contain missing calls or hallucinations. Before relying on the graph for critical decisions, verify each node's `sourceLoc` (file name and line range) against the actual source code.
+
+##### Recommended Input Size: ≤ 1,000 lines total & ≤ 30 functions (regardless of file count)
+
+If your codebase exceeds this range, extract it module by module or folder by folder.
+
+- **Why ≤ 30 functions?**
+  - **Output token limits**: Each function generates roughly 200–400 tokens of JSON (6,000–12,000 tokens for 30 functions), staying within typical single-turn LLM output limits (8,000–16,000 tokens). Complex functions with many globals, errors, constraints, or optional edge attributes (`error`, `loop`, `async`, `trigger`) can take 500–600 tokens each—in that case, aim for **15–20 functions** per batch.
+  - **Visual readability**: Beyond 30 node cards (280px wide), fitting the entire graph on screen scales the viewport down to ~0.5x, making body text (12px) hard to read. Node grouping and folding are planned for future updates.
+- **Why ≤ 1,000 lines?**
+  - Even with few functions, feeding several thousand lines of code at once increases the likelihood of the LLM missing details or hallucinating relationships.
+
+#### Option B: Write Manually (slower, exact)
+
+Copy [`examples/template.nica.json`](./examples/template.nica.json) and fill in the fields using [`schema-guide.md`](./schema-guide.md). The viewer automatically checks reference integrity and warns you about missing node IDs or undefined globals.
+
+### 2. Run the Viewer
+
+```bash
+cd viewer
+npm install
+npm run dev
+# Open http://localhost:5173 and paste your JSON (or click "예시 불러오기" to load the example)
+```
+
+- **Key Features**
+  - **▶ Flow Playback**: Highlights nodes in sequence according to `project.flow` to demonstrate the primary execution path.
+  - **Branch Walk**: Start from `entryPoint` and interactively step through conditional branches (`condition`), loops (`loop`), async calls (`async`), exception jumps (`error`), and call-stack returns.
+  - **Reference Validation**: Detects and warns about non-existent node IDs in edges/flows or undeclared global variables.
+- **Input Limits**: Inputs exceeding **1,000,000 characters (~1MB)** are rejected with an error, and graphs with more than **30 nodes** display a readability warning.
+
+## Schema Overview (v0.1)
+
+| Section | Description |
+|---|---|
+| `project` | Project goal, deliverable, primary execution sequence (`flow`), global variables (`globals`), and observed coding conventions (`rules`) |
+| `nodes[]` | 1 function = 1 node. Purpose, `inputs`/`outputs`, local & global variables, side `effects`, expected `errors`, `constraints`, event `trigger`, and `sourceLoc` |
+| `edges[]` | `call` (red, function call) / `data` (blue, data flow) / `error` (orange, exception caught by target). Supports `condition`, `loop`, and `async` attributes |
+
+See [`schema-guide.md`](./schema-guide.md) (manual authoring), [`nica-prompt.md`](./nica-prompt.md) (LLM extraction), and [`examples/`](./examples) for complete specifications and samples.
+
+## Project Structure
+
+```
+nica-flow/
+├─ nica-prompt.md      # LLM extraction prompt (includes v0.1 schema rules)
+├─ schema-guide.md     # Field-by-field guide for manual JSON authoring
+├─ examples/           # Sample Python code, expected nica JSON, and blank template
+└─ viewer/             # React Flow + dagre + Zod interactive graph viewer
+```
+
+## Roadmap
+
+- [x] Extraction prompt & schema specification (v0.1)
+- [x] Viewer MVP (node graph rendering, flow playback, interactive branch walk, reference validation)
+- [ ] Cross-LLM prompt evaluation and refinement
+- [ ] Impact range highlighting (highlight downstream nodes and edges on click)
+- [ ] Graph diff (compare before/after graphs to visualize change impact)
+- [ ] Forward control (regenerate deterministic, verifiable code by editing node constraints — ultimate goal)
+
+## Research & Citation
+
+NICA Flow is an ongoing research project. If you reference or build upon the concepts or methodology of this project for academic purposes, please cite it using the following BibTeX entry:
+
+```bibtex
+@misc{nicaflow2026,
+  author = {Park, Seowon},
+  title  = {NICA Flow: Node-based Interface for Code Administration},
+  year   = {2026},
+  url    = {https://github.com/Seowon-Park/nica-flow}
+}
+```
+
+## License
 
 [MIT License](./LICENSE) © 2026 Seowon Park (박서원)
