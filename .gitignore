@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.local
+*.log
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+.claude/
+.gemini/
+.DS_Store
+Thumbs.db

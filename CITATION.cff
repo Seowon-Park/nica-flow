@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "학술 목적으로 이 프로젝트를 인용할 때는 아래 메타데이터를 사용해 주세요."
+title: "NICA Flow: Node-based Interface for Code Administration"
+type: software
+authors:
+  - family-names: "Park"
+    given-names: "Seowon"
+repository-code: "https://github.com/Seowon-Park/nica-flow"
+license: MIT
+date-released: "2026-10-21"

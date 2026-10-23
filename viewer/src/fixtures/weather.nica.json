@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "0.1",
+  "project": {
+    "name": "weather",
+    "goal": "여러 도시의 현재 기온을 비동기로 조회해 리포트를 출력한다",
+    "deliverable": "'{도시}: {기온}°C' 형식의 기온 리포트 목록",
+    "language": "python",
+    "entryPoint": "weather.py::main",
+    "flow": [
+      "weather.py::main",
+      "weather.py::collect_reports",
+      "weather.py::fetch_temp",
+      "weather.py::collect_reports",
+      "weather.py::format_report",
+      "weather.py::collect_reports",
+      "weather.py::main"
+    ],
+    "globals": [
+      {
+        "name": "API_URL",
+        "type": "str",
+        "purpose": "날씨 API 기본 URL",
+        "writtenBy": [],
+        "readBy": ["weather.py::fetch_temp"]
+      },
+      {
+        "name": "CACHE",
+        "type": "dict[str, float]",
+        "purpose": "도시별 기온 캐시 (중복 조회 방지)",
+        "writtenBy": ["weather.py::fetch_temp", "weather.py::on_interrupt"],
+        "readBy": ["weather.py::fetch_temp"]
+      }
+    ],
+    "rules": [
+      "함수와 변수에 snake_case 사용",
+      "함수 시그니처에 타입 힌트 사용",
+      "I/O 실패는 호출부의 try-except에서 처리"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "weather.py::main",
+      "name": "main",
+      "purpose": "시그널 핸들러를 등록하고 도시 목록을 입력받아 리포트 수집·출력을 조율한다",
+      "inputs": [],
+      "outputs": [],
+      "locals": [
+        { "name": "cities", "type": "list[str]", "purpose": "사용자가 입력한 도시 목록" }
+      ],
+      "globalsUsed": [],
+      "effects": ["console"],
+      "errors": ["SystemExit — 실행 중 Ctrl+C 입력 시 on_interrupt에서 발생"],
+      "constraints": [],
+      "sourceLoc": { "file": "weather.py", "lines": [42, 47] }
+    },
+    {
+      "id": "weather.py::collect_reports",
+      "name": "collect_reports",
+      "purpose": "도시마다 기온을 조회해 리포트 문자열 목록을 만든다",
+      "inputs": [{ "name": "cities", "type": "list[str]" }],
+      "outputs": [{ "name": "reports", "type": "list[str]" }],
+      "locals": [
+        { "name": "reports", "type": "list[str]", "purpose": "누적되는 리포트 목록" },
+        { "name": "session", "type": "ClientSession", "purpose": "재사용하는 HTTP 세션" },
+        { "name": "temp", "type": "float", "purpose": "조회된 기온" }
+      ],
+      "globalsUsed": [],
+      "effects": ["network"],
+      "errors": [],
+      "constraints": [],
+      "sourceLoc": { "file": "weather.py", "lines": [20, 30] }
+    },
+    {
+      "id": "weather.py::fetch_temp",
+      "name": "fetch_temp",
+      "purpose": "날씨 API에서 도시의 현재 기온을 조회하고 캐시에 저장한다",
+      "inputs": [
+        { "name": "session", "type": "ClientSession" },
+        { "name": "city", "type": "str" }
+      ],
+      "outputs": [{ "name": "temp", "type": "float" }],
+      "locals": [{ "name": "data", "type": "dict", "purpose": "API 응답 본문" }],
+      "globalsUsed": [
+        { "name": "API_URL", "mode": "read" },
+        { "name": "CACHE", "mode": "read" },
+        { "name": "CACHE", "mode": "write" }
+      ],
+      "effects": ["network"],
+      "errors": ["aiohttp.ClientResponseError — API가 4xx/5xx를 응답할 때"],
+      "constraints": ["city는 빈 문자열이 아니어야 함"],
+      "sourceLoc": { "file": "weather.py", "lines": [10, 17] }
+    },
+    {
+      "id": "weather.py::format_report",
+      "name": "format_report",
+      "purpose": "도시와 기온을 리포트 문자열로 포맷한다",
+      "inputs": [
+        { "name": "city", "type": "str" },
+        { "name": "temp", "type": "float" }
+      ],
+      "outputs": [{ "name": "report", "type": "str" }],
+      "locals": [],
+      "globalsUsed": [],
+      "effects": ["none"],
+      "errors": [],
+      "constraints": [],
+      "sourceLoc": { "file": "weather.py", "lines": [33, 34] }
+    },
+    {
+      "id": "weather.py::on_interrupt",
+      "name": "on_interrupt",
+      "purpose": "Ctrl+C 입력 시 캐시를 비우고 프로그램을 종료한다",
+      "inputs": [
+        { "name": "signum", "type": "int" },
+        { "name": "frame", "type": "FrameType" }
+      ],
+      "outputs": [],
+      "locals": [],
+      "globalsUsed": [{ "name": "CACHE", "mode": "write" }],
+      "effects": ["other"],
+      "errors": ["SystemExit — 호출 시 항상 발생 (의도된 종료)"],
+      "constraints": [],
+      "trigger": "SIGINT",
+      "sourceLoc": { "file": "weather.py", "lines": [37, 39] }
+    }
+  ],
+  "edges": [
+    {
+      "from": "weather.py::main",
+      "to": "weather.py::collect_reports",
+      "type": "call",
+      "via": "cities",
+      "condition": "cities가 비어 있지 않을 때",
+      "async": true,
+      "sourceLoc": { "file": "weather.py", "lines": [46, 46] }
+    },
+    {
+      "from": "weather.py::collect_reports",
+      "to": "weather.py::fetch_temp",
+      "type": "call",
+      "via": "session, city",
+      "condition": null,
+      "loop": true,
+      "async": true,
+      "sourceLoc": { "file": "weather.py", "lines": [25, 25] }
+    },
+    {
+      "from": "weather.py::collect_reports",
+      "to": "weather.py::format_report",
+      "type": "call",
+      "via": "city, temp",
+      "condition": "기온 조회에 성공했을 때",
+      "loop": true,
+      "sourceLoc": { "file": "weather.py", "lines": [29, 29] }
+    },
+    {
+      "from": "weather.py::fetch_temp",
+      "to": "weather.py::collect_reports",
+      "type": "error",
+      "via": "aiohttp.ClientResponseError",
+      "condition": null,
+      "sourceLoc": { "file": "weather.py", "lines": [24, 28] }
+    },
+    {
+      "from": "weather.py::fetch_temp",
+      "to": "weather.py::format_report",
+      "type": "data",
+      "via": "temp",
+      "condition": null,
+      "sourceLoc": { "file": "weather.py", "lines": [25, 29] }
+    },
+    {
+      "from": "weather.py::collect_reports",
+      "to": "weather.py::main",
+      "type": "data",
+      "via": "reports",
+      "condition": null,
+      "sourceLoc": { "file": "weather.py", "lines": [46, 46] }
+    },
+    {
+      "from": "weather.py::on_interrupt",
+      "to": "weather.py::fetch_temp",
+      "type": "data",
+      "via": "global:CACHE",
+      "condition": null,
+      "sourceLoc": { "file": "weather.py", "lines": [38, 38] }
+    }
+  ]
+}

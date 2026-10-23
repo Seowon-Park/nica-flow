@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "0.1",
+  "project": {
+    "name": "프로젝트명",
+    "goal": "이 프로젝트를 왜 만들었는지 1문장",
+    "deliverable": "실행하면 무엇을 얻는지 1문장",
+    "language": "python",
+    "entryPoint": "main.py::main",
+    "flow": ["main.py::main", "main.py::helper", "main.py::main"],
+    "globals": [
+      {
+        "name": "CONFIG",
+        "type": "dict",
+        "purpose": "이 전역변수가 존재하는 이유",
+        "writtenBy": [],
+        "readBy": ["main.py::main"]
+      }
+    ],
+    "rules": ["코드에서 일관되게 관찰되는 규칙 (없으면 빈 배열 [])"]
+  },
+  "nodes": [
+    {
+      "id": "main.py::main",
+      "name": "main",
+      "purpose": "이 함수가 존재하는 이유 1문장",
+      "inputs": [],
+      "outputs": [],
+      "locals": [
+        { "name": "result", "type": "str", "purpose": "로직 이해에 중요한 지역변수만 최대 5개" }
+      ],
+      "globalsUsed": [{ "name": "CONFIG", "mode": "read" }],
+      "effects": ["console"],
+      "errors": ["ValueError — 발생 조건을 여기에"],
+      "constraints": ["이 함수가 올바르게 동작하기 위한 전제조건"],
+      "trigger": null,
+      "sourceLoc": { "file": "main.py", "lines": [1, 10] }
+    },
+    {
+      "id": "main.py::helper",
+      "name": "helper",
+      "purpose": "이 함수가 존재하는 이유 1문장",
+      "inputs": [{ "name": "text", "type": "str" }],
+      "outputs": [{ "name": "result", "type": "str" }],
+      "locals": [],
+      "globalsUsed": [],
+      "effects": ["none"],
+      "errors": ["ValueError — text가 비어 있을 때"],
+      "constraints": [],
+      "trigger": null,
+      "sourceLoc": { "file": "main.py", "lines": [12, 20] }
+    }
+  ],
+  "edges": [
+    {
+      "from": "main.py::main",
+      "to": "main.py::helper",
+      "type": "call",
+      "via": "",
+      "condition": null,
+      "sourceLoc": { "file": "main.py", "lines": [5, 5] }
+    },
+    {
+      "from": "main.py::helper",
+      "to": "main.py::main",
+      "type": "data",
+      "via": "result",
+      "condition": null,
+      "loop": false,
+      "async": false
+    },
+    {
+      "from": "main.py::helper",
+      "to": "main.py::main",
+      "type": "error",
+      "via": "ValueError",
+      "condition": null
+    }
+  ]
+}
